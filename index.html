@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+  <title>To-Do App</title>
+  <link rel="stylesheet" href="todo.css" />
+</head>
+
+<body>
+    <div class="box">
+      <!-- Sidebar -->
+      <div class="option">
+        <div class="opt-head">
+        <h2>Categories</h2>
+        <button id="closeBtn">
+          <svg width="24" height="24" viewBox="0 0 24 24">
+            <line x1="4" y1="4" x2="20" y2="20" stroke-width="2" stroke="black" />
+            <line x1="20" y1="4" x2="4" y2="20" stroke-width="2" stroke="black" />
+          </svg>
+        </button>
+      </div>
+        <ul id="categoryList"></ul>
+
+      
+      <button id="addCategoryBtn" class="add-category-btn">+ Add Category</button>
+    </div>
+      <!-- Header -->
+      <div class="flexing">
+        <button id="menuBtn">
+          <svg width="24" height="24" viewBox="0 0 24 24">
+            <rect x="3" y="6" width="18" height="2" fill="white" />
+            <rect x="3" y="11" width="18" height="2" fill="white" />
+            <rect x="3" y="16" width="18" height="2" fill="white" />
+          </svg>
+        </button>
+  
+        <h1>To Do List</h1>
+      </div>
+  
+      <!-- Category label -->
+      <p id="currentCategoryLabel" style="color: white; font-style: italic; text-align: center; margin-top: -10px;"></p>
+  
+      <!-- Input & No-task Message -->
+      <div class="container">
+        <select id="categoryDropdown" style="display: none; margin-top: 10px;"></select>
+        <input id="input" placeholder="Enter a task" />
+      
+        <button onclick="add()" >Add</button><br>
+        
+        
+      </div>
+    </div>
+  
+    <!-- Task List -->
+    <div id="list">
+      <ul id="taskList"></ul>
+        <p id="noTasksMessage" class="no-tasks"></p>
+    </div>
+    <script>
+   const menuBtn = document.getElementById("menuBtn");
+const closeBtn = document.getElementById("closeBtn");
+const option = document.querySelector(".option");
+const input = document.getElementById("input");
+const taskList = document.getElementById("taskList");
+const currentCategoryLabel = document.getElementById("currentCategoryLabel");
+const noTasksMessage = document.getElementById("noTasksMessage");
+const categoryList = document.getElementById("categoryList");
+const addCategoryBtn = document.getElementById("addCategoryBtn");
+const categoryDropdown = document.getElementById("categoryDropdown");
+
+let currentCategory = 'All';
+let tasks = loadTasks();
+let categories = loadCategories();
+
+// Sidebar toggle
+menuBtn.addEventListener("click", () => option.classList.add("active"));
+closeBtn.addEventListener("click", () => option.classList.remove("active"));
+
+// Save categories to localStorage
+function saveCategories(categories) {
+  localStorage.setItem('todoCategories', JSON.stringify(categories));
+}
+
+// Load categories from localStorage or fallback to default
+function loadCategories() {
+  const catJSON = localStorage.getItem('todoCategories');
+  return catJSON ? JSON.parse(catJSON) : ["All", "General", "Skills", "Placement", "Movies"];
+}
+
+// Create category list item with delete button
+function createCategoryElement(categoryName) {
+  const li = document.createElement('li');
+  li.className = 'category-item';
+
+  const span = document.createElement('span');
+  span.textContent = categoryName;
+
+  const deleteBtn = document.createElement('button');
+  deleteBtn.textContent = '🗑️';
+  deleteBtn.className = 'delete-icon';
+
+  // Click to select category
+  span.addEventListener('click', () => {
+    document.querySelectorAll('.category-item').forEach(el => el.classList.remove('active'));
+    li.classList.add('active');
+    currentCategory = categoryName;
+    renderTasks(currentCategory);
+    updatePlaceholder();
+    option.classList.remove("active");
+  });
+
+  // Click to delete category
+  deleteBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (categoryName === 'All') {
+      alert('"All" category cannot be deleted.');
+      return;
+    }
+
+    const confirmed = confirm(`Are you sure you want to delete "${categoryName}" and all its tasks?`);
+    if (!confirmed) return;
+
+    // Remove tasks in this category
+    tasks = tasks.filter(task => task.category !== categoryName);
+    saveTasks(tasks);
+
+    // Remove category from categories array and save
+    categories = categories.filter(cat => cat !== categoryName);
+    saveCategories(categories);
+
+    // Remove category from DOM
+    li.remove();
+
+    // If currently selected, reset to All
+    if (currentCategory === categoryName) {
+      currentCategory = 'All';
+      document.querySelectorAll('.category-item').forEach(el => {
+        if (el.textContent.trim().startsWith('All')) el.classList.add('active');
+      });
+      renderTasks(currentCategory);
+      updatePlaceholder();
+    }
+  });
+
+  li.appendChild(span);
+  li.appendChild(deleteBtn);
+  categoryList.appendChild(li);
+}
+
+// Add category button click
+addCategoryBtn.addEventListener('click', () => {
+  let newCategory = prompt("Enter new category name:");
+  if (!newCategory) return;
+
+  newCategory = newCategory.trim();
+  if (newCategory === "") return;
+
+  if (categories.map(cat => cat.toLowerCase()).includes(newCategory.toLowerCase())) {
+    alert("This category already exists.");
+    return;
+  }
+
+  categories.push(newCategory);
+  saveCategories(categories);
+  createCategoryElement(newCategory);
+});
+
+// Update input placeholder
+function updatePlaceholder() {
+  if (currentCategory === "All") {
+    input.placeholder = "Enter a task";
+    categoryDropdown.style.display = "inline-block";
+
+    // Populate dropdown
+    categoryDropdown.innerHTML = "";
+    categories
+      .filter(cat => cat !== "All") // exclude "All"
+      .forEach(cat => {
+        const option = document.createElement("option");
+        option.value = cat;
+        option.textContent = cat;
+        categoryDropdown.appendChild(option);
+      });
+
+  } else {
+    input.placeholder = `Enter a task in "${currentCategory}"`;
+    categoryDropdown.style.display = "none";
+  }
+}
+
+
+// Add task
+function add() {
+  const text = input.value.trim();
+  if (text === "") return;
+
+  let category = currentCategory;
+
+  if (currentCategory === "All") {
+    category = categoryDropdown.value;
+    if (!category || !categories.includes(category)) {
+      alert("Please select a valid category.");
+      return;
+    }
+  }
+
+  addTask(text, category);
+  input.value = "";
+}
+
+
+function addTask(taskText, category) {
+  const task = {
+    id: Date.now(),
+    text: taskText,
+    completed: false,
+    category: category
+  };
+  tasks.push(task);
+  saveTasks(tasks);
+  renderTasks(currentCategory);
+}
+
+function deleteTask(id) {
+  tasks = tasks.filter(task => task.id !== id);
+  saveTasks(tasks);
+  renderTasks(currentCategory);
+}
+
+function toggleTask(id) {
+  tasks = tasks.map(task =>
+    task.id === id ? { ...task, completed: !task.completed } : task
+  );
+  saveTasks(tasks);
+  renderTasks(currentCategory);
+}
+
+function renderTasks(category = 'All') {
+  taskList.innerHTML = '';
+  currentCategoryLabel.textContent = `Viewing: ${category}`;
+
+  const filteredTasks = category === 'All'
+    ? tasks
+    : tasks.filter(task => task.category === category);
+
+  if (filteredTasks.length === 0) {
+    noTasksMessage.textContent = `No tasks in "${category}"`;
+    return;
+  }
+
+  noTasksMessage.textContent = '';
+
+  filteredTasks.forEach(task => {
+    if (!task.text || task.text.trim() === "") return;
+
+    const li = document.createElement('li');
+    li.setAttribute("class", "listings");
+    li.style.backgroundColor = "#dbceff";
+    li.style.padding = "10px";
+    li.style.marginBottom = "8px";
+    li.style.borderRadius = "5px";
+    li.style.cursor = "grab";
+    li.style.display="flex";
+    li.style.flexDirection="column";
+
+    // First line container (task text + badge)
+    const topLine = document.createElement('div');
+    topLine.style.display = 'flex';
+    topLine.style.justifyContent = 'space-between';
+    topLine.style.alignItems = 'center';
+
+    // Task text span
+    const taskTextSpan = document.createElement('span');
+    taskTextSpan.textContent = task.text;
+    if (task.completed) {
+      taskTextSpan.style.textDecoration = 'line-through';
+    }
+    taskTextSpan.style.cursor = 'pointer';
+    taskTextSpan.title = "Click to toggle complete";
+    taskTextSpan.style.flex = '1';
+
+    topLine.appendChild(taskTextSpan);
+
+    // Category badge tag
+    const categoryTag = document.createElement('span');
+    categoryTag.textContent = task.category;
+    categoryTag.className = 'category-tag';
+
+    // Safe class for category color
+    const safeCategoryClass = 'category-' + task.category.replace(/\s+/g, '-').replace(/[^\w-]/g, '');
+    categoryTag.classList.add(safeCategoryClass);
+
+    topLine.appendChild(categoryTag);
+
+    li.appendChild(topLine);
+
+    // Second line for buttons
+    const btnLine = document.createElement('div');
+    btnLine.style.marginTop = '6px';
+
+    // Edit button
+    const editBtn = document.createElement('button');
+    editBtn.textContent = 'Edit';
+    editBtn.style.backgroundColor = "green";
+    editBtn.style.color = 'white';
+    editBtn.style.marginRight = '10px';
+    editBtn.style.cursor = 'pointer';
+    editBtn.onclick = (e) => {
+      e.stopPropagation();
+      editTask(task, taskTextSpan);
+    };
+
+    // Delete button
+    const delBtn = document.createElement('button');
+    delBtn.textContent = 'Delete';
+    delBtn.style.cursor = 'pointer';
+    delBtn.onclick = (e) => {
+      e.stopPropagation();
+      deleteTask(task.id);
+    };
+
+    btnLine.appendChild(editBtn);
+    btnLine.appendChild(delBtn);
+
+    li.appendChild(btnLine);
+
+    // Drag & drop attributes and handlers
+    li.draggable = true;
+    li.dataset.id = task.id;
+
+    li.addEventListener('dragstart', dragStart);
+    li.addEventListener('dragover', dragOver);
+    li.addEventListener('drop', drop);
+    li.addEventListener('dragend', dragEnd);
+
+    taskList.appendChild(li);
+  });
+}
+
+// Edit task function
+function editTask(task, taskTextSpan) {
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.value = task.text;
+  input.style.width = '70%';
+
+  // Replace the span with the input field
+  taskTextSpan.replaceWith(input);
+  input.focus();
+
+  // Save edit on Enter or blur
+  function saveEdit() {
+    const newText = input.value.trim();
+    if (newText === "") {
+      alert("Task cannot be empty!");
+      input.focus();
+      return;
+    }
+
+    // If text changed, update tasks array and save
+    if (newText !== task.text) {
+      tasks = tasks.map(t => t.id === task.id ? { ...t, text: newText } : t);
+      saveTasks(tasks);
+      renderTasks(currentCategory);
+    } else {
+      // If no changes, just render again
+      renderTasks(currentCategory);
+    }
+  }
+
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      saveEdit();
+    } else if (e.key === 'Escape') {
+      // Cancel edit on Escape
+      renderTasks(currentCategory);
+    }
+  });
+
+  input.addEventListener('blur', () => {
+    saveEdit();
+  });
+}
+
+function saveTasks(tasks) {
+  localStorage.setItem('todoTasks', JSON.stringify(tasks));
+}
+
+function loadTasks() {
+  const tasksJSON = localStorage.getItem('todoTasks');
+  return tasksJSON ? JSON.parse(tasksJSON) : [];
+}
+
+// Drag & Drop handlers
+let draggedItem = null;
+
+function dragStart(e) {
+  draggedItem = e.currentTarget;
+  e.dataTransfer.effectAllowed = 'move';
+  setTimeout(() => {
+    draggedItem.style.display = 'none';
+  }, 0);
+}
+
+function dragOver(e) {
+  e.preventDefault();
+  const target = e.currentTarget;
+  if (target && target !== draggedItem && target.parentNode === draggedItem.parentNode) {
+    const bounding = target.getBoundingClientRect();
+    const offset = e.clientY - bounding.top;
+    if (offset > bounding.height / 2) {
+      target.style['border-bottom'] = 'solid 2px #555';
+      target.style['border-top'] = '';
+    } else {
+      target.style['border-top'] = 'solid 2px #555';
+      target.style['border-bottom'] = '';
+    }
+  }
+}
+
+function drop(e) {
+  e.preventDefault();
+  const target = e.currentTarget;
+  if (target && target !== draggedItem && target.parentNode === draggedItem.parentNode) {
+    const bounding = target.getBoundingClientRect();
+    const offset = e.clientY - bounding.top;
+    if (offset > bounding.height / 2) {
+      target.style['border-bottom'] = '';
+      target.parentNode.insertBefore(draggedItem, target.nextSibling);
+    } else {
+      target.style['border-top'] = '';
+      target.parentNode.insertBefore(draggedItem, target);
+    }
+
+    updateTasksOrder();
+  }
+}
+
+function dragEnd(e) {
+  e.currentTarget.style.display = 'block';
+  document.querySelectorAll('#taskList li').forEach(li => {
+    li.style['border-top'] = '';
+    li.style['border-bottom'] = '';
+  });
+  draggedItem = null;
+}
+
+function updateTasksOrder() {
+  const updatedTasks = [];
+  document.querySelectorAll('#taskList li').forEach(li => {
+    const id = parseInt(li.dataset.id);
+    const task = tasks.find(t => t.id === id);
+    if (task) updatedTasks.push(task);
+  });
+  tasks = updatedTasks;
+  saveTasks(tasks);
+}
+
+// Initial setup: load categories from storage and create elements
+categories.forEach(category => createCategoryElement(category));
+
+// Set "All" as active on load
+document.querySelectorAll('.category-item').forEach(item => {
+  if (item.textContent.trim().startsWith('All')) {
+    item.classList.add('active');
+  }
+});
+
+updatePlaceholder();
+renderTasks(currentCategory);
+
+
+      </script>
+      
+    
+</body>
+</html>    
