@@ -40,7 +40,7 @@ No frameworks. No external libraries. Just pure JS.
 
 1. Clone the repository
 
-git clone https://github.com/your-username/todo-mate.git
+git clone https://github.com/sivabharathi-dev/todo-mate.git
 
 
 2. Open the folder
