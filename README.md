@@ -5,61 +5,15 @@ A clean, customizable, and category-based To-Do Application built using HTML, CS
 
 🚀 Features
 
-✅ Task Management
-
-Add, edit, delete tasks
-
-Mark tasks as completed
-
 Smooth drag-and-drop task reordering
 
 Persistent save using localStorage
 
-
-🗂️ Category System
-
-Built-in categories: All, General, Skills, Placement, Movies
-
-Add custom categories
-
-Delete any category except All
-
-Each task is tagged with its category (with colored badges)
-
-Category-specific viewing
-
 Task filtering based on selected category
 
-
-🧭 Sidebar Navigation
-
-Expandable/collapsible category sidebar
-
-Clean UI with active category highlighting
-
-Smooth transition animations
-
-
-🖊️ Task Editing
-
-Inline editing with instant update
-
-Auto-save on Enter or Blur
-
-Cancel with Escape key
-
-
-🎨 UI & UX Highlights
-
-Modern card-style layout
+Sidebar Navigation
 
 Mobile-friendly responsive design
-
-Soft animations
-
-Custom placeholder text depending on category
-
-Clean visual feedback for drag & drop
 
 
 🛠️ Tech Stack
@@ -69,7 +23,6 @@ HTML5 – Structure
 CSS3 – Styling, animations, responsive layout
 
 JavaScript (Vanilla) – Core logic, localStorage, DOM manipulation
-
 
 No frameworks. No external libraries. Just pure JS.
 
@@ -117,8 +70,6 @@ Layouts adjust automatically for a better experience.
 
 
 
-
 ⭐ Show Your Support
 
-If you like ToDo Mate, consider giving the repository a ⭐ on GitHub!
-
+If you like ToDo Mate, consider giving the repository a ⭐ on GitHub
