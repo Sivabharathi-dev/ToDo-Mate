@@ -27,6 +27,11 @@ JavaScript (Vanilla) – Core logic, localStorage, DOM manipulation
 No frameworks. No external libraries. Just pure JS.
 
 
+🌍 Live Demo
+
+https://todo-mate-alpha.vercel.app/
+
+
 📂 Project Structure
 
 /todo-mate
@@ -67,8 +72,3 @@ ToDo Mate works perfectly on:
 
 Layouts adjust automatically for a better experience.
 
-
-
-⭐ Show Your Support
-
-If you like ToDo Mate, consider giving the repository a ⭐ on GitHub
