@@ -32,8 +32,7 @@ No frameworks. No external libraries. Just pure JS.
 /todo-mate
 │── index.html
 │── todo.css
-│── (optional) README.md
-└── assets/ (if any)
+│── README.md
 
 
 📦 How to Use
