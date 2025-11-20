@@ -5,15 +5,15 @@ A clean, customizable, and category-based To-Do Application built using HTML, CS
 
 🚀 Features
 
-Smooth drag-and-drop task reordering
+1.Smooth drag-and-drop task reordering
 
-Persistent save using localStorage
+2.Persistent save using localStorage
 
-Task filtering based on selected category
+3.Task filtering based on selected category
 
-Sidebar Navigation
+4.Sidebar Navigation
 
-Mobile-friendly responsive design
+5.Mobile-friendly responsive design
 
 
 🛠️ Tech Stack
