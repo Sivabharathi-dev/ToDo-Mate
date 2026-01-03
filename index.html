@@ -71,7 +71,7 @@ const categoryList = document.getElementById("categoryList");
 const addCategoryBtn = document.getElementById("addCategoryBtn");
 const categoryDropdown = document.getElementById("categoryDropdown");
 
-let currentCategory = 'All';
+let currentCategory = '';
 let tasks = [];
 let categories = [];
 let db = null;
@@ -187,6 +187,7 @@ function createCategoryElement(categoryName) {
     document.querySelectorAll('.category-item').forEach(el => el.classList.remove('active'));
     li.classList.add('active');
     currentCategory = categoryName;
+    localStorage.setItem('lastCategory', currentCategory);
     renderTasks(currentCategory);
     updatePlaceholder();
     option.classList.remove("active");
@@ -195,10 +196,6 @@ function createCategoryElement(categoryName) {
   // Click to delete category
   deleteBtn.addEventListener('click', async (e) => {
     e.stopPropagation();
-    if (categoryName === 'All') {
-      alert('"All" category cannot be deleted.');
-      return;
-    }
 
     const confirmed = confirm(`Are you sure you want to delete "${categoryName}" and all its tasks?`);
     if (!confirmed) return;
@@ -214,12 +211,21 @@ function createCategoryElement(categoryName) {
     // Remove category from DOM
     li.remove();
 
-    // If currently selected, reset to All
+    // If currently selected
     if (currentCategory === categoryName) {
-      currentCategory = 'All';
-      document.querySelectorAll('.category-item').forEach(el => {
-        if (el.textContent.trim().startsWith('All')) el.classList.add('active');
-      });
+      if (categories.length > 0) {
+          currentCategory = categories[0];
+          localStorage.setItem('lastCategory', currentCategory);
+          // Set active class
+          document.querySelectorAll('.category-item span').forEach(s => {
+            if (s.textContent === currentCategory) {
+                s.parentElement.classList.add('active');
+            }
+          });
+      } else {
+          currentCategory = '';
+          localStorage.removeItem('lastCategory');
+      }
       renderTasks(currentCategory);
       updatePlaceholder();
     }
@@ -250,25 +256,12 @@ addCategoryBtn.addEventListener('click', async () => {
 
 // Update input placeholder
 function updatePlaceholder() {
-  if (currentCategory === "All") {
-    input.placeholder = "Enter a task";
-    categoryDropdown.style.display = "inline-block";
-
-    // Populate dropdown
-    categoryDropdown.innerHTML = "";
-    categories
-      .filter(cat => cat !== "All")
-      .forEach(cat => {
-        const opt = document.createElement("option");
-        opt.value = cat;
-        opt.textContent = cat;
-        categoryDropdown.appendChild(opt);
-      });
-
-  } else {
+  if (currentCategory) {
     input.placeholder = `Enter a task in "${currentCategory}"`;
-    categoryDropdown.style.display = "none";
+  } else {
+    input.placeholder = "Create a category first";
   }
+  categoryDropdown.style.display = "none";
 }
 
 // Format date for display
@@ -283,17 +276,12 @@ async function add() {
   const text = input.value.trim();
   if (text === "") return;
 
-  let category = currentCategory;
-
-  if (currentCategory === "All") {
-    category = categoryDropdown.value;
-    if (!category || !categories.includes(category)) {
-      alert("Please select a valid category.");
+  if (!currentCategory) {
+      alert("Please create a category first.");
       return;
-    }
   }
 
-  await addTask(text, category);
+  await addTask(text, currentCategory);
   input.value = "";
 }
 
@@ -324,13 +312,18 @@ async function toggleTask(id) {
   renderTasks(currentCategory);
 }
 
-function renderTasks(category = 'All') {
+function renderTasks(category) {
   taskList.innerHTML = '';
+  
+  if (!category) {
+      currentCategoryLabel.textContent = "No Category Selected";
+      noTasksMessage.textContent = "Create a category to get started.";
+      return;
+  }
+  
   currentCategoryLabel.textContent = `Viewing: ${category}`;
 
-  const filteredTasks = category === 'All'
-    ? tasks
-    : tasks.filter(task => task.category === category);
+  const filteredTasks = tasks.filter(task => task.category === category);
 
   if (filteredTasks.length === 0) {
     noTasksMessage.textContent = `No tasks in "${category}"`;
@@ -573,7 +566,7 @@ async function initApp() {
     // Load categories
     categories = await loadCategories();
     if (categories.length === 0) {
-      categories = ["All"];
+      categories = ["Personal", "Work"]; 
       await saveCategories();
     }
     
@@ -583,12 +576,25 @@ async function initApp() {
     // Create category elements
     categories.forEach(category => createCategoryElement(category));
     
-    // Set "All" as active on load
-    document.querySelectorAll('.category-item').forEach(item => {
-      if (item.textContent.trim().startsWith('All')) {
-        item.classList.add('active');
-      }
-    });
+    // Restore last active category
+    const lastCategory = localStorage.getItem('lastCategory');
+    if (lastCategory && categories.includes(lastCategory)) {
+        currentCategory = lastCategory;
+    } else if (categories.length > 0) {
+        currentCategory = categories[0];
+    } else {
+        currentCategory = '';
+    }
+    
+    // Set active class
+    if (currentCategory) {
+        localStorage.setItem('lastCategory', currentCategory);
+        document.querySelectorAll('.category-item span').forEach(span => {
+            if (span.textContent === currentCategory) {
+                span.parentElement.classList.add('active');
+            }
+        });
+    }
     
     updatePlaceholder();
     renderTasks(currentCategory);
